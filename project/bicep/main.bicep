@@ -28,7 +28,7 @@ param sku string = 'B1'
 param runtime string = 'dotnet'
 
 @description('The Runtime stack of current web app')
-param linuxFxVersion string = 'NODE|lts'
+param linuxFxVersion string = 'NODE|18-lts'
 
 var functionAppName = 'fnapp-${appName}'
 var nodeWebAppName = 'node-${appName}'
@@ -135,6 +135,7 @@ resource nodeWebApp 'Microsoft.Web/sites@2021-03-01' = {
     serverFarmId: hostingPlan.id
     siteConfig: {
       linuxFxVersion: linuxFxVersion
+      appCommandLine: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
       appSettings: [
