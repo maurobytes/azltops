@@ -172,6 +172,12 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
       netFrameworkVersion: 'v6.0'
+      linuxFxVersion: 'DOTNET|6.0'
+      cors:{
+        allowedOrigins: [
+          '*'
+        ]
+      }
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
