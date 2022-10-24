@@ -37,6 +37,7 @@ var workspaceName = 'log-${appName}'
 var applicationInsightsName = 'ai-${appName}'
 var storageAccountName = '${uniqueString(resourceGroup().id)}azfunctions'
 var functionWorkerRuntime = runtime
+var loadTestName = 'loadtest-${appName}'
 
 @description('This is the built-in DocumentDB Account Contributor role. See https://docs.microsoft.com/azure/role-based-access-control/built-in-roles#documentdb-account-contributor')
 var cosmosDBContributorRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5bd9cd88-fe45-4216-938b-f97437e15450')
@@ -229,6 +230,11 @@ resource cosmosDBFunctionAppPermissions 'Microsoft.Authorization/roleAssignments
     principalType: 'ServicePrincipal'
     roleDefinitionId: cosmosDBContributorRole
   }
+}
+
+resource azureLoadTestService 'Microsoft.LoadTestService/loadtests@2022-04-15-preview' = {
+  name: loadTestName
+  location: location
 }
 
 output functionAppName string = functionApp.name
