@@ -38,14 +38,14 @@ jobs:
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet build --configuration Release --output ./output
           popd
-      - name: Upload a Build Artifact
+      - name: Upload a Function Artifact
         uses: actions/upload-artifact@v3.1.1
         with:
           # Artifact name
           name: functionApp # optional, default is artifact
           # A file, directory or wildcard pattern that describes what to upload
           path: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
-      - name: Upload a Build Artifact
+      - name: Upload a Bicep Artifact
         uses: actions/upload-artifact@v3.1.1
         with:
           # Artifact name
@@ -62,7 +62,7 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Download a Build Artifact
+      - name: Download a Bicep Artifact
         uses: actions/download-artifact@v3
         with:
           # Artifact name
@@ -76,7 +76,7 @@ jobs:
           resourceGroupName: ${{ secrets.AZURE_RG }}
           template: 'bicep/main.bicep'
           
-      - name: Download a Build Artifact
+      - name: Download a Function Artifact
         uses: actions/download-artifact@v3
         with:
           # Artifact name
@@ -89,4 +89,43 @@ jobs:
           app-name: ${{ steps.deploy.outputs.functionAppName }} #'azltops-func'
           slot-name: 'production'
           package: 'functionApp'
-     
+  build-and-deploy-frontend:
+    runs-on: ubuntu-latest
+    environment:
+      name: 'Development'
+      url: ${{ steps.deploy.outputs.nodeWebAppUrl }}
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: create env file
+      run: |
+        cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        touch .env.production
+        echo VUE_APP_COSTUMES_API_URL=${{ steps.deploy.outputs.functionAppUrl }} >> .env.production
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: project/webapp/package-lock.json
+
+    - name: npm install, build, and test
+      run: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    - name: 'Deploy to Azure WebApp'
+      id: deploy-to-webapp 
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ steps.deploy.outputs.nodeWebAppName }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/dist
+

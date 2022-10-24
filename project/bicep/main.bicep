@@ -216,6 +216,10 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
           name: 'CosmosDbEndpoint'
           value: cosmosdbAccount.properties.documentEndpoint
         }
+        {
+          name: 'CosmosDbConnectionString'
+          value: 'AccountEndpoint=${cosmosdbAccount.properties.documentEndpoint};'
+        }
       ]
     }
     httpsOnly: true
@@ -238,3 +242,7 @@ resource azureLoadTestService 'Microsoft.LoadTestService/loadtests@2022-04-15-pr
 }
 
 output functionAppName string = functionApp.name
+output functionAppUrl string = functionApp.properties.defaultHostName
+output nodeWebAppName string = nodeWebApp.name
+output nodeWebAppUrl string = nodeWebApp.properties.defaultHostName
+
