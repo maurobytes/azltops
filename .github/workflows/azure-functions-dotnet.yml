@@ -54,6 +54,7 @@ jobs:
           path: '${{ env.AZURE_BICEP_PATH }}'
   deploy:
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: 'Az CLI login'
         uses: azure/login@v1
