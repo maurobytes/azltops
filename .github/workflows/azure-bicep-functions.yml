@@ -18,6 +18,7 @@ permissions:
 env:
   AZURE_BICEP_PATH: 'project/bicep' # set this to the path to your web app project, defaults to the repository root
   AZURE_FUNCTIONAPP_PACKAGE_PATH: 'project/api' # set this to the path to your web app project, defaults to the repository root
+  AZURE_WEBAPP_PACKAGE_PATH: 'project/webapp'
   DOTNET_VERSION: '6.0.x' # set this to the dotnet version to use
 
 jobs:
@@ -91,9 +92,6 @@ jobs:
           package: 'functionApp'
   build-and-deploy-frontend:
     runs-on: ubuntu-latest
-    environment:
-      name: 'Development'
-      url: ${{ steps.deploy.outputs.nodeWebAppUrl }}
     steps:
     - uses: actions/checkout@v3
 
