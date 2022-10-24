@@ -230,3 +230,5 @@ resource cosmosDBFunctionAppPermissions 'Microsoft.Authorization/roleAssignments
     roleDefinitionId: cosmosDBContributorRole
   }
 }
+
+output functionAppName string = functionApp.name
