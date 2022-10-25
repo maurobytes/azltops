@@ -28,7 +28,7 @@ param sku string = 'B1'
 param runtime string = 'dotnet'
 
 @description('The Runtime stack of current web app')
-param linuxFxVersion string = 'NODE|lts'
+param linuxFxVersion string = 'NODE|18-lts'
 
 var functionAppName = 'fnapp-${appName}'
 var nodeWebAppName = 'node-${appName}'
@@ -135,6 +135,7 @@ resource nodeWebApp 'Microsoft.Web/sites@2021-03-01' = {
     serverFarmId: hostingPlan.id
     siteConfig: {
       linuxFxVersion: linuxFxVersion
+      appCommandLine: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
       minTlsVersion: '1.2'
       ftpsState: 'FtpsOnly'
       appSettings: [
@@ -171,6 +172,12 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
       ftpsState: 'FtpsOnly'
       minTlsVersion: '1.2'
       netFrameworkVersion: 'v6.0'
+      linuxFxVersion: 'DOTNET|6.0'
+      cors:{
+        allowedOrigins: [
+          '*'
+        ]
+      }
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
@@ -205,16 +212,8 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
           value: functionWorkerRuntime
         }
         {
-          name: 'DatabaseName'
-          value: database.name
-        }
-        {
-          name: 'ContainerName'
-          value: container.name
-        }
-        {
-          name: 'CosmosDbEndpoint'
-          value: cosmosdbAccount.properties.documentEndpoint
+          name: 'CosmosDbConnectionString'
+          value: cosmosdbAccount.listConnectionStrings().connectionStrings[0].connectionString
         }
       ]
     }
@@ -238,3 +237,7 @@ resource azureLoadTestService 'Microsoft.LoadTestService/loadtests@2022-04-15-pr
 }
 
 output functionAppName string = functionApp.name
+output functionAppUrl string = functionApp.properties.defaultHostName
+output nodeWebAppName string = nodeWebApp.name
+output nodeWebAppUrl string = nodeWebApp.properties.defaultHostName
+
