@@ -212,20 +212,8 @@ resource functionApp 'Microsoft.Web/sites@2021-03-01' = {
           value: functionWorkerRuntime
         }
         {
-          name: 'DatabaseName'
-          value: database.name
-        }
-        {
-          name: 'ContainerName'
-          value: container.name
-        }
-        {
-          name: 'CosmosDbEndpoint'
-          value: cosmosdbAccount.properties.documentEndpoint
-        }
-        {
           name: 'CosmosDbConnectionString'
-          value: 'AccountEndpoint=${cosmosdbAccount.properties.documentEndpoint};'
+          value: cosmosdbAccount.listConnectionStrings().connectionStrings[0].connectionString
         }
       ]
     }

@@ -103,7 +103,7 @@ jobs:
       run: |
         cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         touch .env.production
-        echo VUE_APP_COSTUMES_API_URL="https://${{ needs.deploy.outputs.ApiUrl }}" >> .env.production
+        echo VUE_APP_COSTUMES_API_URL="https://${{ needs.deploy.outputs.ApiUrl }}/api" >> .env.production
 
     - name: Set up Node.js
       uses: actions/setup-node@v3
