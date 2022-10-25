@@ -26,9 +26,10 @@ jobs:
   deploy-iac:
     runs-on: ubuntu-latest
     outputs:
-      ApiUrl: ${{ steps.deploy.outputs.functionAppUrl }}
-      WebAppUrl: ${{ steps.deploy.outputs.nodeWebAppName }}
-      LoadTestName: ${{ steps.deploy.outputs.loadTestName }}
+      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
+      functionAppUrl: ${{ steps.deploy.outputs.functionAppUrl }}
+      nodeWebAppName: ${{ steps.deploy.outputs.nodeWebAppName }}
+      loadTestName: ${{ steps.deploy.outputs.loadTestName }}
     steps:
       - uses: actions/checkout@v3
 
@@ -76,7 +77,7 @@ jobs:
       run: |
         cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         touch .env.production
-        echo VUE_APP_COSTUMES_API_URL="https://${{ needs.deploy-iac.outputs.ApiUrl }}/api" >> .env.production
+        echo VUE_APP_COSTUMES_API_URL="https://${{ needs.deploy-iac.outputs.functionAppUrl }}/api" >> .env.production
 
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -101,7 +102,7 @@ jobs:
       id: deploy-to-webapp 
       uses: azure/webapps-deploy@v2
       with:
-        app-name: ${{ needs.deploy-iac.outputs.WebAppUrl }}
+        app-name: ${{ needs.deploy-iac.outputs.nodeWebAppName }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/dist
   loadTest:
     name: Load Test
@@ -119,7 +120,7 @@ jobs:
         uses: azure/load-testing@v1
         with:
           loadTestConfigFile: 'assets/SampleApp.yml'
-          loadTestResource: ${{ needs.deploy-iac.outputs.LoadTestName }}
+          loadTestResource: ${{ needs.deploy-iac.outputs.loadTestName }}
           resourceGroup: ${{ secrets.AZURE_RG }}
           env: |
             [
