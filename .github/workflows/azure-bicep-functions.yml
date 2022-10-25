@@ -21,6 +21,7 @@ env:
   AZURE_WEBAPP_PACKAGE_PATH: 'project/webapp'
   AZURE_LOAD_TEST_PATH: 'assets'
   DOTNET_VERSION: '6.0.x' # set this to the dotnet version to use
+  LOAD_TEST_CONFIG: 'LoadTestConfig.yaml'
 
 jobs:
   deploy-iac:
@@ -125,7 +126,7 @@ jobs:
       - name: 'Azure Load Testing'
         uses: azure/load-testing@v1
         with:
-          loadTestConfigFile: 'assets/SampleApp.yml'
+          loadTestConfigFile: ${{ env.LOAD_TEST_CONFIG }}
           loadTestResource: ${{ needs.deploy-iac.outputs.loadTestName }}
           resourceGroup: ${{ secrets.AZURE_RG }}
           env: |
