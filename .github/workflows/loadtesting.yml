@@ -7,6 +7,7 @@ on:
       - mauro/regression
     paths:
       - 'project/api/**'
+  workflow_dispatch:
     
 
 env:
