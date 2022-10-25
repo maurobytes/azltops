@@ -28,6 +28,7 @@ jobs:
     outputs:
       ApiUrl: ${{ steps.deploy.outputs.functionAppUrl }}
       WebAppUrl: ${{ steps.deploy.outputs.nodeWebAppName }}
+      LoadTestName: ${{ steps.deploy.outputs.loadTestName }}
     steps:
       - uses: actions/checkout@v3
 
@@ -62,7 +63,7 @@ jobs:
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         with:
-          app-name: ${{ steps.deploy.outputs.functionAppName }} #'azltops-func'
+          app-name: ${{ needs.deploy-iac.outputs.functionAppName }} #'azltops-func'
           slot-name: 'production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
   build-and-deploy-frontend:
@@ -75,7 +76,7 @@ jobs:
       run: |
         cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         touch .env.production
-        echo VUE_APP_COSTUMES_API_URL="https://${{ needs.deploy.outputs.ApiUrl }}/api" >> .env.production
+        echo VUE_APP_COSTUMES_API_URL="https://${{ needs.deploy-iac.outputs.ApiUrl }}/api" >> .env.production
 
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -100,11 +101,11 @@ jobs:
       id: deploy-to-webapp 
       uses: azure/webapps-deploy@v2
       with:
-        app-name: ${{ needs.deploy.outputs.WebAppUrl }}
+        app-name: ${{ needs.deploy-iac.outputs.WebAppUrl }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/dist
   loadTest:
     name: Load Test
-    needs: [build-and-deploy-backend, build-and-deploy-frontend]
+    needs: [deploy-iac, build-and-deploy-backend, build-and-deploy-frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -118,13 +119,13 @@ jobs:
         uses: azure/load-testing@v1
         with:
           loadTestConfigFile: 'assets/SampleApp.yml'
-          loadTestResource: ${{ needs.deploy.outputs.loadTestName }}
+          loadTestResource: ${{ needs.deploy-iac.outputs.LoadTestName }}
           resourceGroup: ${{ secrets.AZURE_RG }}
           env: |
             [
               {
               "name": "webapp",
-              "value": "${{ needs.deploy.outputs.nodeWebAppName }}.azurewebsites.net"
+              "value": "${{ needs.deploy-iac.outputs.nodeWebAppName }}"
               }
             ]          
       
