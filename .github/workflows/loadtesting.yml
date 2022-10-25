@@ -4,6 +4,7 @@ name: Regression Test
 on:
   pull_request:
     branches:
+      - main
       - mauro/regression
     paths:
       - 'project/api/**'
