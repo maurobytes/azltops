@@ -20,7 +20,7 @@ namespace Costumes.API
             ILogger log)
         {
             log.LogInformation("GetCostumeById function processed a request.");
-
+            System.Threading.Thread.Sleep(3000);
             return new OkObjectResult(costumes);
         }
     }
