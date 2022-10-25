@@ -45,7 +45,7 @@ jobs:
           template: 'project/bicep/main.bicep'
   build-and-deploy-backend:
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: deploy-iac
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@v3
@@ -67,7 +67,7 @@ jobs:
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
   build-and-deploy-frontend:
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: deploy-iac
     steps:
     - uses: actions/checkout@v3
 
