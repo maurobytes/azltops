@@ -240,4 +240,4 @@ output functionAppName string = functionApp.name
 output functionAppUrl string = functionApp.properties.defaultHostName
 output nodeWebAppName string = nodeWebApp.name
 output nodeWebAppUrl string = nodeWebApp.properties.defaultHostName
-
+output loadTestName string = azureLoadTestService.name
