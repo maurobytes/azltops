@@ -20,7 +20,6 @@ namespace Costumes.API
             ILogger log)
         {
             log.LogInformation("GetCostumeById function processed a request.");
-
             return new OkObjectResult(costumes);
         }
     }
