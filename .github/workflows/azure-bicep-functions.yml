@@ -132,7 +132,7 @@ jobs:
           env: |
             [
               {
-              "name": "webapp",
+              "name": "apiurl",
               "value": "${{ needs.deploy-iac.outputs.nodeWebAppName }}"
               }
             ]          
