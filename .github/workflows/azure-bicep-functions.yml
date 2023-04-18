@@ -7,8 +7,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'project/api/**'
+    # paths:
+    #   - 'project/**'
   workflow_dispatch:
 
 permissions:
@@ -24,6 +24,26 @@ env:
   LOAD_TEST_CONFIG: 'LoadTestConfig.yaml'
 
 jobs:
+  # JOB to run change detection
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+    # For pull requests it's not necessary to checkout the code
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          backend:
+            - 'project/api/**'
+          frontend:
+            - 'project/webapp/**'
   deploy-iac:
     runs-on: ubuntu-latest
     outputs:
@@ -47,8 +67,9 @@ jobs:
           resourceGroupName: ${{ secrets.AZURE_RG }}
           template: 'project/bicep/main.bicep'
   build-and-deploy-backend:
+    needs: [changes, deploy-iac]
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
-    needs: deploy-iac
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@v3
@@ -75,8 +96,9 @@ jobs:
           slot-name: 'production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
   build-and-deploy-frontend:
+    needs: [changes, deploy-iac]
+    if: ${{ needs.changes.outputs.frontend  == 'true' }}
     runs-on: ubuntu-latest
-    needs: deploy-iac
     steps:
     - uses: actions/checkout@v3
 
