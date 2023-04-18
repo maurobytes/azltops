@@ -133,7 +133,7 @@ jobs:
             [
               {
               "name": "apiurl",
-              "value": "${{ needs.deploy-iac.outputs.functionAppName }}"
+              "value": "${{ needs.deploy-iac.outputs.functionAppUrl }}"
               }
             ]          
       
