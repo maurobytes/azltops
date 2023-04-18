@@ -138,6 +138,11 @@ jobs:
     name: Load Test
     needs: [deploy-iac, build-and-deploy-backend, build-and-deploy-frontend]
     runs-on: ubuntu-latest
+    if: |
+      always() && 
+      needs.deploy-iac.result == 'success' && 
+      (needs.build-and-deploy-backend.result == 'success' || needs.build-and-deploy-backend.result == 'skipped') && 
+      (needs.build-and-deploy-frontend.result == 'success' || needs.build-and-deploy-frontend.result == 'skipped')
     steps:
       - uses: actions/checkout@v3
       - uses: azure/login@v1
