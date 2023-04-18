@@ -37,7 +37,7 @@
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol">https</stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-          <stringProp name="HTTPSampler.path">/api/costumes/aa2269c4-acb7-4e0b-aec5-cd97229c2a19</stringProp>
+          <stringProp name="HTTPSampler.path">/api/costumes/cf030752-b1aa-43c5-8d90-eac2272a11e4</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -122,7 +122,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="udv_apiurl" elementType="Argument">
             <stringProp name="Argument.name">udv_apiurl</stringProp>
-            <stringProp name="Argument.value">${__BeanShell( System.getenv(&quot;apiurl&quot;) )}</stringProp>
+            <stringProp name="Argument.value">${__BeanShell( System.getenv("apiurl") )}</stringProp>
             <stringProp name="Argument.desc">API URL</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>

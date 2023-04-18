@@ -4,5 +4,5 @@ testPlan: test.jmx
 description: 'Regression Load Test from CICD'
 engineInstances: 1
 failureCriteria:
-    - avg(response_time_ms) > 1000
+    - GetAllCostumes: avg(response_time_ms) > 1000
     - percentage(error) > 20

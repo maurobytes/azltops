@@ -1,0 +1,171 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy dotnet core app to Azure Function App - azltops-func
+
+on:
+  push:
+    branches:
+      - main
+    # paths:
+    #   - 'project/**'
+  workflow_dispatch:
+
+permissions:
+      id-token: write
+      contents: read
+      
+env:
+  AZURE_BICEP_PATH: 'project/bicep' # set this to the path to your web app project, defaults to the repository root
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'project/api' # set this to the path to your web app project, defaults to the repository root
+  AZURE_WEBAPP_PACKAGE_PATH: 'project/webapp'
+  AZURE_LOAD_TEST_PATH: 'assets'
+  DOTNET_VERSION: '6.0.x' # set this to the dotnet version to use
+  LOAD_TEST_CONFIG: 'LoadTestConfig.yaml'
+
+jobs:
+  # JOB to run change detection
+  changes:
+    runs-on: ubuntu-latest
+    # Required permissions
+    permissions:
+      pull-requests: read
+    # Set job outputs to values from filter step
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+    - uses: actions/checkout@v3
+    # For pull requests it's not necessary to checkout the code
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          backend:
+            - 'project/api/**'
+          frontend:
+            - 'project/webapp/**'
+  deploy-iac:
+    runs-on: ubuntu-latest
+    outputs:
+      functionAppName: ${{ steps.deploy.outputs.functionAppName }}
+      functionAppUrl: ${{ steps.deploy.outputs.functionAppUrl }}
+      nodeWebAppName: ${{ steps.deploy.outputs.nodeWebAppName }}
+      loadTestName: ${{ steps.deploy.outputs.loadTestName }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy Azure Resource Manager (ARM) Template
+        id: deploy
+        uses: Azure/arm-deploy@v1
+        with:
+          resourceGroupName: ${{ secrets.AZURE_RG }}
+          template: 'project/bicep/main.bicep'
+  build-and-deploy-backend:
+    needs: [changes, deploy-iac]
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v3
+      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: 'Resolve Project Dependencies Using Dotnet'
+        shell: pwsh
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          dotnet build --configuration Release --output ./output
+          popd
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: 'Run Azure Functions Action'
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ needs.deploy-iac.outputs.functionAppName }} #'azltops-func'
+          slot-name: 'production'
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
+  build-and-deploy-frontend:
+    needs: [changes, deploy-iac]
+    if: ${{ needs.changes.outputs.frontend  == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: create env file
+      run: |
+        cd ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        touch .env.production
+        echo VUE_APP_COSTUMES_API_URL="https://${{ needs.deploy-iac.outputs.functionAppUrl }}/api" >> .env.production
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: project/webapp/package-lock.json
+
+    - name: npm install, build, and test
+      run: |
+        npm install
+        npm run build --if-present
+        npm run test --if-present
+      working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    - name: 'Deploy to Azure WebApp'
+      id: deploy-to-webapp 
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ needs.deploy-iac.outputs.nodeWebAppName }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/dist
+  loadTest:
+    name: Load Test
+    needs: [deploy-iac, build-and-deploy-backend, build-and-deploy-frontend]
+    runs-on: ubuntu-latest
+    if: |
+      always() && 
+      needs.deploy-iac.result == 'success' && 
+      (needs.build-and-deploy-backend.result == 'success' || needs.build-and-deploy-backend.result == 'skipped') && 
+      (needs.build-and-deploy-frontend.result == 'success' || needs.build-and-deploy-frontend.result == 'skipped')
+    steps:
+      - uses: actions/checkout@v3
+      - uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: 'Azure Load Testing'
+        uses: azure/load-testing@v1
+        with:
+          loadTestConfigFile: ${{ env.LOAD_TEST_CONFIG }}
+          loadTestResource: ${{ needs.deploy-iac.outputs.loadTestName }}
+          resourceGroup: ${{ secrets.AZURE_RG }}
+          env: |
+            [
+              {
+              "name": "apiurl",
+              "value": "${{ needs.deploy-iac.outputs.functionAppUrl }}"
+              }
+            ]          
+      
+      - uses: actions/upload-artifact@v2
+        with:
+          name: loadTestResults
+          path: ${{ github.workspace }}/loadTest
